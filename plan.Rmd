@@ -1,0 +1,110 @@
+---
+title: "Capstone Project Report"
+subtitle: "Natural Language Processing and Text Prediction using HC Corpora datasets"
+author: "Igor Goltsov <riversy@gmail.com>"
+output: html_document
+---
+
+In this report I would like to share my experience how did I get and clean HC Corpora dataset. How did I get the goals of my *Capstone Project* and how I would like to solve the problem in the next month.
+
+## About the Capstone Project
+
+Everyone knows *SwiftKey*. There's the company who created the application that predict next word while user types text on mobile keyboard. The aim of the Capstone Project is to reproduce that functionality. I will use free [HC Corpora][1] dataset of human texts to build prediction model. It will predict next word then user types some text. 
+
+## Get data
+
+The necessary data was compiled by Coursera team into [one package][2] that I will download and unzip it into project folder. I will use `ensureCorporaIsDownloaded` function that collected in the `utils.R`. So I will load the file using `source()` command and fire `ensureCorporaIsDownloaded()` function. The full source code of the file might be found [here][3]. 
+
+```{r}
+source("utils.R")
+ensureCorporaIsDownloaded()
+```
+
+We have following structure of data folder that was created in the project.
+
+```
+data/
+  en_US/
+    en_US.blogs.txt
+    en_US.news.txt
+    en_US.twitter.txt
+  ...  
+    
+```
+
+There are three files in the each of language folders. These files contains scrapped data from Blogs, News and Twitter respectivly. On a brief view every file contains one entity per line. I would like to make some measurmets before clean up to realize something about the texts.  
+
+## Basic evaluation
+
+I would like to get some brief evaluation on the data. I need to get quantity of lines for each of corpus to prepare representative sample for each of corpus. 
+
+Let's start from *news*. I will load it into memory first. And define total quantity of lines in the corpus.
+
+```{r, cache=TRUE}
+
+# Load news
+news.lines <- scan(
+  "data/en_US/en_US.news.txt", 
+  what = "character", 
+  sep = "\n"
+)
+
+news.line.length <- length(news.lines)
+
+# Remove original lines to 
+# reduce memory usage
+rm(news.lines)
+```
+
+I will do the same for both *en_US.blogs.txt* and *en_US.twitter.txt*.  
+
+```{r, cache=TRUE}
+
+# Load blogs
+blog.lines <- scan(
+  "data/en_US/en_US.blogs.txt", 
+  what = "character", 
+  sep = "\n"
+)
+
+blog.line.length <- length(blog.lines)
+
+# Remove original lines to 
+# reduce memory usage
+rm(blog.lines)
+
+# Load lines
+twitter.lines <- scan(
+  "data/en_US/en_US.twitter.txt", 
+  what = "character", 
+  sep = "\n"
+)
+
+twitter.line.length <- length(twitter.lines)
+
+# Remove original lines to 
+# reduce memory usage
+rm(twitter.lines)
+```
+
+So we can see that there are huge amount of lines in each of datasets. *`r news.line.length`*, *`r blog.line.length`* and *`r twitter.line.length`* lines respectevly for **news**, **blogs** and **twitter** datasets. We will use this data to prepare random samples on the next step. 
+
+## Clean text data
+
+
+
+
+
+
+## Exploratory analysis
+
+
+
+
+
+
+
+[1]: http://www.corpora.heliohost.org/ "HC corpora is a collection of corpora for various languages freely available to download."
+[2]: https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip "Coursera-SwiftKey.zip"
+[3]: http://utils.R_source "utils.R"
+[4]: http://evaluation.R_source "evaluation.R"
