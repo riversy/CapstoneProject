@@ -71,3 +71,20 @@ ensureCorporaIsDownloaded <- function(){
       )
     }
 }
+
+profanityWords <- function(lang = "en_US"){
+
+  if (!exists("profanityList")){
+    fileName <- paste(c("dictionary/profanity/", lang, ".txt"), collapse = "")
+    
+    
+    profanityList <<- scan(
+      fileName,
+      what = "character",
+      sep = "\n"
+    )
+  } 
+  
+
+  profanityList
+}

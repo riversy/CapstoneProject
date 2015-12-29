@@ -124,16 +124,13 @@ As we can see. The amount of texts is quite huge. It might be danger to load who
 
 I created the function `cleanShortCorpus()` that used to clean short corpus of text without valuable memory consumption. I will use it further to cleanup data piece by piece.  
 
-In this function I will split corpus into sentences. After that I will remove all non character symbols and punctuation. Then I will lowercase that and remove possible profanity words. 
-
-??? Probably I will apply the stemming and tokenization on that step. 
+In this function I will split corpus into sentences. After that I will remove all non character symbols and punctuation. Then I will lowercase that and remove possible profanity words. I will use `utils.R` in that I've stored function that loads profanity dictionary
 
 ```{r, cache=TRUE, warning=FALSE}
 library(openNLP)
 library(tm) 
 library(qdap)
-
-profanityDictionary <- "http://www.cs.cmu.edu/~biglou/resources/bad-words.txt"
+source("utils.R")
 
 cleanShortCorpus <- function(corpus){
   # TODO: Clean data here 
@@ -141,51 +138,55 @@ cleanShortCorpus <- function(corpus){
   # Split corpus to sentences
   corpus <- sent_detect(corpus, language = "en", model = NULL)
   
-  corpus <- VCorpus(VectorSource(corpus))
-  
-  corpus <- tm_map(corpus, removeNumbers) 
-  corpus <- tm_map(corpus, stripWhitespace) 
-  corpus <- tm_map(corpus, tolower) 
-  corpus <- tm_map(corpus, removePunctuation)
-  corpus <- tm_map(corpus, removeWords, stopwords("english"))
-  
-  as.character(corpus)
+  # Clean corpus from whole punctuation
+  cleanCorpus <- character(0)
+  j <- 1
+  for (i in 1:length(corpus)){
+    
+    wordsList <- strsplit(corpus[i], "\\W")
+    wordsList <- unlist(wordsList)
+    
+    # Clean from empty words
+    wordsList <- wordsList[which(wordsList != "")]
+    
+    # Transform words to lower 
+    wordsList <- tolower(wordsList)
+
+    # Clean profanity
+    wordsList <- wordsList[!(wordsList %in% profanityWords())]
+    
+    # Check if sentence has 
+    # three or greater words
+    if (length(wordsList) > 2){
+      cleanCorpus[j] <- paste(wordsList, collapse = " ")
+      j <- j + 1
+    }
+  }
+
+  cleanCorpus
 }
 
-for (rawCorpusFile in list.files("data/en_US")){
+if (!file.exists("clean/en_US.blogs.txt")){
+  for (rawCorpusFile in list.files("data/en_US")){
   
-  rawCorpusPath <- paste0(c("data/en_US", rawCorpusFile), collapse = "/")
-  cleanCorpusPath <- paste0(c("clean", rawCorpusFile), collapse = "/")
-  
-  if (!file.exists("clean")){
-    dir.create("clean")
-  }
-  
-  # Remove clean file from 
-  # prevoius execution
-  if (file.exists(cleanCorpusPath)){
-    unlink(cleanCorpusPath)
-  }
-
-  raw <- file(rawCorpusPath, open = "rb") 
-  clean <- file(cleanCorpusPath, open = "wt") 
-  
-  readPerTime = 100
-
-  lines <- readLines(
-              raw, 
-              readPerTime, 
-              skipNul = TRUE, 
-              warn = FALSE,
-              encoding = "UTF-8"
-          )
-  
-  
-  while (length(lines) > 0){
+    rawCorpusPath <- paste0(c("data/en_US", rawCorpusFile), collapse = "/")
+    cleanCorpusPath <- paste0(c("clean", rawCorpusFile), collapse = "/")
     
-    cleanLine <- cleanShortCorpus(lines)
-    writeLines(cleanLine, con = clean)
+    if (!file.exists("clean")){
+      dir.create("clean")
+    }
     
+    # Remove clean file from 
+    # prevoius execution
+    if (file.exists(cleanCorpusPath)){
+      unlink(cleanCorpusPath)
+    }
+  
+    raw <- file(rawCorpusPath, open = "rb") 
+    clean <- file(cleanCorpusPath, open = "wt") 
+    
+    readPerTime = 100
+  
     lines <- readLines(
                 raw, 
                 readPerTime, 
@@ -193,11 +194,29 @@ for (rawCorpusFile in list.files("data/en_US")){
                 warn = FALSE,
                 encoding = "UTF-8"
             )
-  }
-  
-  close(clean)
-  close(raw)
+    
+    
+    while (length(lines) > 0){
+      
+      cleanLines <- cleanShortCorpus(lines)
+      
+      writeLines(cleanLines, con = clean)
+      
+      lines <- readLines(
+                  raw, 
+                  readPerTime, 
+                  skipNul = TRUE, 
+                  warn = FALSE,
+                  encoding = "UTF-8"
+              )
+    }
+    
+    close(clean)
+    close(raw)
+  } 
 }
+
+
 ```
 
 
