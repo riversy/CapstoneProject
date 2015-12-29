@@ -9,7 +9,7 @@ In this report I would like to share my experience how did I get and clean HC Co
 
 ## About the Capstone Project
 
-Everyone knows *SwiftKey*. There's the company who created the application that predict next word while user types text on mobile keyboard. The aim of the Capstone Project is to reproduce that functionality. I will use free [HC Corpora][1] dataset of human texts to build prediction model. It will predict next word then user types some text. 
+Everyone knows **SwiftKey**. There's the company who created the application that predict next word while user types text on mobile keyboard. The aim of the Capstone Project is to reproduce that functionality. I will use free [HC Corpora][1] dataset of human texts to build prediction model. It will predict next word then user types some text. 
 
 ## Get data
 
@@ -40,7 +40,7 @@ I would like to get some brief evaluation on the data. I need to get quantity of
 
 Let's start from *news*. I will load it into memory first. And define total quantity of lines in the corpus.
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, warning=FALSE}
 
 # Load news
 news.lines <- scan(
@@ -54,11 +54,13 @@ news.line.length <- length(news.lines)
 # Remove original lines to 
 # reduce memory usage
 rm(news.lines)
+
+news.line.length
 ```
 
 I will do the same for both *en_US.blogs.txt* and *en_US.twitter.txt*.  
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, warning=FALSE}
 
 # Load blogs
 blog.lines <- scan(
@@ -73,6 +75,8 @@ blog.line.length <- length(blog.lines)
 # reduce memory usage
 rm(blog.lines)
 
+blog.line.length
+
 # Load lines
 twitter.lines <- scan(
   "data/en_US/en_US.twitter.txt", 
@@ -85,11 +89,120 @@ twitter.line.length <- length(twitter.lines)
 # Remove original lines to 
 # reduce memory usage
 rm(twitter.lines)
+
+twitter.line.length
 ```
 
-So we can see that there are huge amount of lines in each of datasets. *`r news.line.length`*, *`r blog.line.length`* and *`r twitter.line.length`* lines respectevly for **news**, **blogs** and **twitter** datasets. We will use this data to prepare random samples on the next step. 
+So we can see that there are huge amount of lines in each of datasets. *`r news.line.length`*, *`r blog.line.length`* and *`r twitter.line.length`* lines respectevly for **news**, **blogs** and **twitter** datasets. We will use this data to prepare random samples on the next step. I will display the table with summarized amount of lines per corpus.  
+
+```{r, results='asis', echo=FALSE}
+library(pander)
+corpus.names <- c(
+  "en_US.news.txt",
+  "en_US.blogs.txt",
+  "en_US.twitter.txt"
+)
+corpus.lengths <- c(
+  news.line.length,
+  blog.line.length,
+  twitter.line.length
+)
+summary.table <- data.frame(corpus.names, corpus.lengths)
+colnames(summary.table) <- c(
+  "Name of Corpus",
+  "Amount of lines"
+)
+
+panderOptions('table.alignment.default', 'left')
+pander(summary.table)
+
+```
 
 ## Clean text data
+
+As we can see. The amount of texts is quite huge. It might be danger to load whole data into the memory, but we can easly use advantages of `tm` package. It will help us to clean the data without complete loading it into memory. 
+
+I created the function `cleanShortCorpus()` that used to clean short corpus of text without valuable memory consumption. I will use it further to cleanup data piece by piece.  
+
+In this function I will split corpus into sentences. After that I will remove all non character symbols and punctuation. Then I will lowercase that and remove possible profanity words. 
+
+??? Probably I will apply the stemming and tokenization on that step. 
+
+```{r, cache=TRUE, warning=FALSE}
+library(openNLP)
+library(tm) 
+library(qdap)
+
+profanityDictionary <- "http://www.cs.cmu.edu/~biglou/resources/bad-words.txt"
+
+cleanShortCorpus <- function(corpus){
+  # TODO: Clean data here 
+  
+  # Split corpus to sentences
+  corpus <- sent_detect(corpus, language = "en", model = NULL)
+  
+  corpus <- VCorpus(VectorSource(corpus))
+  
+  corpus <- tm_map(corpus, removeNumbers) 
+  corpus <- tm_map(corpus, stripWhitespace) 
+  corpus <- tm_map(corpus, tolower) 
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, removeWords, stopwords("english"))
+  
+  as.character(corpus)
+}
+
+for (rawCorpusFile in list.files("data/en_US")){
+  
+  rawCorpusPath <- paste0(c("data/en_US", rawCorpusFile), collapse = "/")
+  cleanCorpusPath <- paste0(c("clean", rawCorpusFile), collapse = "/")
+  
+  if (!file.exists("clean")){
+    dir.create("clean")
+  }
+  
+  # Remove clean file from 
+  # prevoius execution
+  if (file.exists(cleanCorpusPath)){
+    unlink(cleanCorpusPath)
+  }
+
+  raw <- file(rawCorpusPath, open = "rb") 
+  clean <- file(cleanCorpusPath, open = "wt") 
+  
+  readPerTime = 100
+
+  lines <- readLines(
+              raw, 
+              readPerTime, 
+              skipNul = TRUE, 
+              warn = FALSE,
+              encoding = "UTF-8"
+          )
+  
+  
+  while (length(lines) > 0){
+    
+    cleanLine <- cleanShortCorpus(lines)
+    writeLines(cleanLine, con = clean)
+    
+    lines <- readLines(
+                raw, 
+                readPerTime, 
+                skipNul = TRUE, 
+                warn = FALSE,
+                encoding = "UTF-8"
+            )
+  }
+  
+  close(clean)
+  close(raw)
+}
+```
+
+
+
+## Create samples for test purposes
 
 
 
@@ -106,5 +219,5 @@ So we can see that there are huge amount of lines in each of datasets. *`r news.
 
 [1]: http://www.corpora.heliohost.org/ "HC corpora is a collection of corpora for various languages freely available to download."
 [2]: https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip "Coursera-SwiftKey.zip"
-[3]: http://utils.R_source "utils.R"
-[4]: http://evaluation.R_source "evaluation.R"
+[3]: https://github.com/riversy/CapstoneProject/blob/master/utils.R "utils.R"
+[4]: https://github.com/riversy/CapstoneProject/blob/master/evaluation.R "evaluation.R"

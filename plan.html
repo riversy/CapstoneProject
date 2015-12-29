@@ -70,11 +70,11 @@ img {
 <p>In this report I would like to share my experience how did I get and clean HC Corpora dataset. How did I get the goals of my <em>Capstone Project</em> and how I would like to solve the problem in the next month.</p>
 <div id="about-the-capstone-project" class="section level2">
 <h2>About the Capstone Project</h2>
-<p>Everyone knows <em>SwiftKey</em>. There’s the company who created the application that predict next word while user types text on mobile keyboard. The aim of the Capstone Project is to reproduce that functionality. I will use free <a href="http://www.corpora.heliohost.org/" title="HC corpora is a collection of corpora for various languages freely available to download.">HC Corpora</a> dataset of human texts to build prediction model. It will predict next word then user types some text.</p>
+<p>Everyone knows <strong>SwiftKey</strong>. There’s the company who created the application that predict next word while user types text on mobile keyboard. The aim of the Capstone Project is to reproduce that functionality. I will use free <a href="http://www.corpora.heliohost.org/" title="HC corpora is a collection of corpora for various languages freely available to download.">HC Corpora</a> dataset of human texts to build prediction model. It will predict next word then user types some text.</p>
 </div>
 <div id="get-data" class="section level2">
 <h2>Get data</h2>
-<p>The necessary data was compiled by Coursera team into <a href="https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip" title="Coursera-SwiftKey.zip">one package</a> that I will download and unzip it into project folder. I will use <code>ensureCorporaIsDownloaded</code> function that collected in the <code>utils.R</code>. So I will load the file using <code>source()</code> command and fire <code>ensureCorporaIsDownloaded()</code> function. The full source code of the file might be found <a href="http://utils.R_source" title="utils.R">here</a>.</p>
+<p>The necessary data was compiled by Coursera team into <a href="https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip" title="Coursera-SwiftKey.zip">one package</a> that I will download and unzip it into project folder. I will use <code>ensureCorporaIsDownloaded</code> function that collected in the <code>utils.R</code>. So I will load the file using <code>source()</code> command and fire <code>ensureCorporaIsDownloaded()</code> function. The full source code of the file might be found <a href="https://github.com/riversy/CapstoneProject/blob/master/utils.R" title="utils.R">here</a>.</p>
 <pre class="r"><code>source(&quot;utils.R&quot;)
 ensureCorporaIsDownloaded()</code></pre>
 <p>We have following structure of data folder that was created in the project.</p>
@@ -102,7 +102,10 @@ news.line.length &lt;- length(news.lines)
 
 # Remove original lines to 
 # reduce memory usage
-rm(news.lines)</code></pre>
+rm(news.lines)
+
+news.line.length</code></pre>
+<pre><code>## [1] 77259</code></pre>
 <p>I will do the same for both <em>en_US.blogs.txt</em> and <em>en_US.twitter.txt</em>.</p>
 <pre class="r"><code># Load blogs
 blog.lines &lt;- scan(
@@ -117,20 +120,50 @@ blog.line.length &lt;- length(blog.lines)
 # reduce memory usage
 rm(blog.lines)
 
-# Load lines
+blog.line.length</code></pre>
+<pre><code>## [1] 899288</code></pre>
+<pre class="r"><code># Load lines
 twitter.lines &lt;- scan(
   &quot;data/en_US/en_US.twitter.txt&quot;, 
   what = &quot;character&quot;, 
   sep = &quot;\n&quot;
-)</code></pre>
-<pre><code>## Warning in scan(&quot;data/en_US/en_US.twitter.txt&quot;, what = &quot;character&quot;, sep =
-## &quot;\n&quot;): внутренний nul(s) найден во вводе</code></pre>
-<pre class="r"><code>twitter.line.length &lt;- length(twitter.lines)
+)
+
+twitter.line.length &lt;- length(twitter.lines)
 
 # Remove original lines to 
 # reduce memory usage
-rm(twitter.lines)</code></pre>
-<p>So we can see that there are huge amount of lines in each of datasets. <em>77259</em>, <em>899288</em> and <em>2360148</em> lines respectevly for <strong>news</strong>, <strong>blogs</strong> and <strong>twitter</strong> datasets. We will use this data to prepare random samples on the next step.</p>
+rm(twitter.lines)
+
+twitter.line.length</code></pre>
+<pre><code>## [1] 2360148</code></pre>
+<p>So we can see that there are huge amount of lines in each of datasets. <em>77259</em>, <em>899288</em> and <em>2360148</em> lines respectevly for <strong>news</strong>, <strong>blogs</strong> and <strong>twitter</strong> datasets. We will use this data to prepare random samples on the next step. I will display the table with summarized amount of lines per corpus.</p>
+<table>
+<colgroup>
+<col width="25%"></col>
+<col width="25%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Name of Corpus</th>
+<th align="left">Amount of lines</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">en_US.news.txt</td>
+<td align="left">77259</td>
+</tr>
+<tr class="even">
+<td align="left">en_US.blogs.txt</td>
+<td align="left">899288</td>
+</tr>
+<tr class="odd">
+<td align="left">en_US.twitter.txt</td>
+<td align="left">2360148</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="clean-text-data" class="section level2">
 <h2>Clean text data</h2>
