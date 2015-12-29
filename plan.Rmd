@@ -120,115 +120,89 @@ pander(summary.table)
 
 ## Clean text data
 
-As we can see. The amount of texts is quite huge. It might be danger to load whole data into the memory, but we can easly use advantages of `tm` package. It will help us to clean the data without complete loading it into memory. 
+As we can see. The amount of texts is quite huge. It might be danger to load whole data into the memory, but we can easly use advantages of `tm` package. So we will load and clean files obe by one. And after clean we will save it into *.rds* files. 
 
-I created the function `cleanShortCorpus()` that used to clean short corpus of text without valuable memory consumption. I will use it further to cleanup data piece by piece.  
+I created the function `getCleanCorpus()` that used to clean corpus of text. I will also use it further to test prediction model. It's useful to have one function that reduce both source data and query that should be predicted.   
 
-In this function I will split corpus into sentences. After that I will remove all non character symbols and punctuation. Then I will lowercase that and remove possible profanity words. I will use `utils.R` in that I've stored function that loads profanity dictionary
+Some cleanup helpers will be loaded from `cleanup.R` file.
 
 ```{r, cache=TRUE, warning=FALSE}
 library(openNLP)
 library(tm) 
 library(qdap)
-source("utils.R")
 
-cleanShortCorpus <- function(corpus){
-  # TODO: Clean data here 
+source("cleanup.R")
+
+getCleanCorpus <- function(lines){
   
   # Split corpus to sentences
-  corpus <- sent_detect(corpus, language = "en", model = NULL)
+  lines <- sent_detect(lines, language = "en", model = NULL)
   
-  # Clean corpus from whole punctuation
-  cleanCorpus <- character(0)
-  j <- 1
-  for (i in 1:length(corpus)){
-    
-    wordsList <- strsplit(corpus[i], "\\W")
-    wordsList <- unlist(wordsList)
-    
-    # Clean from empty words
-    wordsList <- wordsList[which(wordsList != "")]
-    
-    # Transform words to lower 
-    wordsList <- tolower(wordsList)
+  corpus <- VCorpus(VectorSource(lines))
+  
+  reduceList <- c(
+    removeSymbols,
+    convertExclamationsToPoints,
+    removeDoublePoints,
+    normalizeAnd,
+    clearProfanity,
+    removeNumbers,
+    tolower,
+    stripWhitespace
+  )
+  
+  
+  corpus <- tm_map(corpus, FUN = tm_reduce, tmFuns = reduceList)
 
-    # Clean profanity
-    wordsList <- wordsList[!(wordsList %in% profanityWords())]
-    
-    # Check if sentence has 
-    # three or greater words
-    if (length(wordsList) > 2){
-      cleanCorpus[j] <- paste(wordsList, collapse = " ")
-      j <- j + 1
-    }
-  }
-
-  cleanCorpus
+  corpus
 }
-
-if (!file.exists("clean/en_US.blogs.txt")){
-  for (rawCorpusFile in list.files("data/en_US")){
-  
-    rawCorpusPath <- paste0(c("data/en_US", rawCorpusFile), collapse = "/")
-    cleanCorpusPath <- paste0(c("clean", rawCorpusFile), collapse = "/")
-    
-    if (!file.exists("clean")){
-      dir.create("clean")
-    }
-    
-    # Remove clean file from 
-    # prevoius execution
-    if (file.exists(cleanCorpusPath)){
-      unlink(cleanCorpusPath)
-    }
-  
-    raw <- file(rawCorpusPath, open = "rb") 
-    clean <- file(cleanCorpusPath, open = "wt") 
-    
-    readPerTime = 100
-  
-    lines <- readLines(
-                raw, 
-                readPerTime, 
-                skipNul = TRUE, 
-                warn = FALSE,
-                encoding = "UTF-8"
-            )
-    
-    
-    while (length(lines) > 0){
-      
-      cleanLines <- cleanShortCorpus(lines)
-      
-      writeLines(cleanLines, con = clean)
-      
-      lines <- readLines(
-                  raw, 
-                  readPerTime, 
-                  skipNul = TRUE, 
-                  warn = FALSE,
-                  encoding = "UTF-8"
-              )
-    }
-    
-    close(clean)
-    close(raw)
-  } 
-}
-
 
 ```
 
+For each of file I'll create *R Data Storage* file that store cleaned corpus. Variables that stored in *rds* may be easly reused further. 
 
 
-## Create samples for test purposes
+```{r cache=TRUE}
 
+# Check if R Data Storage 
+# folder exists
+if (!file.exists("rds")){
+  dir.create("rds")
+}
 
+for (rawCorpusFile in list.files("data/en_US")){
+  
+  rawCorpusPath <- paste0(c("data/en_US", rawCorpusFile), collapse = "/")
+  cleanCorpusFile <- paste0(c(rawCorpusFile, "rds"), collapse = ".")
+  cleanCorpusPath <- paste0(c("rds", cleanCorpusFile), collapse = "/")
+  
+  if (!file.exists(cleanCorpusPath)){
+    
+    lines <- scan(
+      rawCorpusPath, 
+      what = "character", 
+      sep = "\n", 
+      skipNul = TRUE
+    )
+    
+    corpus <- getCleanCorpus(lines)
+    
+    saveRDS(corpus, cleanCorpusPath)
+    
+    # Clean memory 
+    # before next 
+    # step
+    rm(lines)
+    rm(corpus)
+  } 
+} 
 
-
-
+```
 
 ## Exploratory analysis
+
+I would like to make some exploratory data analisys for whole corpus. I will load all datasets into one corpus of documents and will explore 1-grams, 2-grams and 3-grams for this collection of data. 
+
 
 
 

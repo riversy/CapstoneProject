@@ -167,6 +167,99 @@ twitter.line.length</code></pre>
 </div>
 <div id="clean-text-data" class="section level2">
 <h2>Clean text data</h2>
+<p>As we can see. The amount of texts is quite huge. It might be danger to load whole data into the memory, but we can easly use advantages of <code>tm</code> package. It will help us to clean the data without complete loading it into memory.</p>
+<p>I created the function <code>cleanShortCorpus()</code> that used to clean short corpus of text without valuable memory consumption. I will use it further to cleanup data piece by piece.</p>
+<p>In this function I will split corpus into sentences. After that I will remove all non character symbols and punctuation. Then I will lowercase that and remove possible profanity words. I will use <code>utils.R</code> in that I’ve stored function that loads profanity dictionary</p>
+<pre class="r"><code>library(openNLP)
+library(tm) 
+library(qdap)
+source(&quot;utils.R&quot;)
+
+cleanShortCorpus &lt;- function(corpus){
+  
+  # Split corpus to sentences
+  corpus &lt;- sent_detect(corpus, language = &quot;en&quot;, model = NULL)
+  
+  # Clean corpus from whole punctuation
+  cleanCorpus &lt;- character(0)
+  j &lt;- 1
+  for (i in 1:length(corpus)){
+    
+    wordsList &lt;- strsplit(corpus[i], &quot;\\W&quot;)
+    wordsList &lt;- unlist(wordsList)
+    
+    # Clean from empty words
+    wordsList &lt;- wordsList[which(wordsList != &quot;&quot;)]
+    
+    # Transform words to lower 
+    wordsList &lt;- tolower(wordsList)
+
+    # Clean profanity
+    wordsList &lt;- wordsList[!(wordsList %in% profanityWords())]
+    
+    # Check if sentence has 
+    # three or greater words
+    if (length(wordsList) &gt; 2){
+      cleanCorpus[j] &lt;- paste(wordsList, collapse = &quot; &quot;)
+      j &lt;- j + 1
+    }
+  }
+
+  cleanCorpus
+}
+
+if (!file.exists(&quot;clean/en_US.blogs.txt&quot;)){
+  for (rawCorpusFile in list.files(&quot;data/en_US&quot;)){
+  
+    rawCorpusPath &lt;- paste0(c(&quot;data/en_US&quot;, rawCorpusFile), collapse = &quot;/&quot;)
+    cleanCorpusPath &lt;- paste0(c(&quot;clean&quot;, rawCorpusFile), collapse = &quot;/&quot;)
+    
+    if (!file.exists(&quot;clean&quot;)){
+      dir.create(&quot;clean&quot;)
+    }
+    
+    # Remove clean file from 
+    # prevoius execution
+    if (file.exists(cleanCorpusPath)){
+      unlink(cleanCorpusPath)
+    }
+  
+    raw &lt;- file(rawCorpusPath, open = &quot;rb&quot;) 
+    clean &lt;- file(cleanCorpusPath, open = &quot;wt&quot;) 
+    
+    readPerTime = 100
+  
+    lines &lt;- readLines(
+                raw, 
+                readPerTime, 
+                skipNul = TRUE, 
+                warn = FALSE,
+                encoding = &quot;UTF-8&quot;
+            )
+    
+    
+    while (length(lines) &gt; 0){
+      
+      cleanLines &lt;- cleanShortCorpus(lines)
+      
+      writeLines(cleanLines, con = clean)
+      
+      lines &lt;- readLines(
+                  raw, 
+                  readPerTime, 
+                  skipNul = TRUE, 
+                  warn = FALSE,
+                  encoding = &quot;UTF-8&quot;
+              )
+    }
+    
+    close(clean)
+    close(raw)
+  } 
+}</code></pre>
+</div>
+<div id="create-samples-for-test-purposes" class="section level2">
+<h2>Create samples for test purposes</h2>
 </div>
 <div id="exploratory-analysis" class="section level2">
 <h2>Exploratory analysis</h2>
